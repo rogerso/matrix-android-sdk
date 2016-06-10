@@ -20,7 +20,11 @@ import org.matrix.androidsdk.RestClient;
 import org.matrix.androidsdk.rest.api.PresenceApi;
 import org.matrix.androidsdk.rest.callback.ApiCallback;
 import org.matrix.androidsdk.rest.callback.RestAdapterCallback;
+import org.matrix.androidsdk.rest.model.Event;
+import org.matrix.androidsdk.rest.model.PresenceListParams;
 import org.matrix.androidsdk.rest.model.User;
+
+import java.util.List;
 
 /**
  * Class used to make requests to the presence API.
@@ -67,6 +71,42 @@ public class PresenceRestClient extends RestClient<PresenceApi> {
             @Override
             public void onRetry() {
                 getPresence(userId, callback);
+            }
+        }));
+    }
+
+    /**
+     * Modify the presence list.
+     * @param invites the list of userIDs to invite to the list
+     * @param drops the list of userIDs to drop from the list
+     * @param callback on success callback
+     */
+    public void modifyPresenceList(final List<String> invites, final List<String> drops, final ApiCallback<Void> callback) {
+        final String description = "modifyPresenceList invites: " + invites + " drops: " + drops;
+
+        PresenceListParams params = new PresenceListParams();
+        params.invite = invites;
+        params.drop = drops;
+
+        mApi.modifyPresenceList(mCredentials.userId, params, new RestAdapterCallback<Void>(description, mUnsentEventsManager, callback, new RestAdapterCallback.RequestRetryCallBack() {
+            @Override
+            public void onRetry() {
+                modifyPresenceList(invites, drops, callback);
+            }
+        }));
+    }
+
+    /**
+     * Get the presence list.
+     * @param callback on success callback containing a list of Presence events
+     */
+    public void getPresenceList(final ApiCallback<List<Event>> callback) {
+        final String description = "getPresenceList";
+
+        mApi.presenceList(mCredentials.userId, new RestAdapterCallback<List<Event>>(description, mUnsentEventsManager, callback, new RestAdapterCallback.RequestRetryCallBack() {
+            @Override
+            public void onRetry() {
+                getPresenceList(callback);
             }
         }));
     }
